@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--DE_CACHE_GUARD-->
+<meta name="de-build" content="20261029-215947">
+<script>
+(function () {
+  var B = "20261029-215947";
+  // Per-PAGE key. A single site-wide key would let the first stale page of a
+  // session consume the one allowed retry, leaving every other page stale.
+  var KEY = "de_cache_reload:" + location.pathname;
+
+  // Tidy the address bar: drop the ?v= we may have arrived with.
+  try {
+    var here = new URL(location.href);
+    if (here.searchParams.get("v")) {
+      here.searchParams.delete("v");
+      history.replaceState(null, "", here.pathname + here.search + here.hash);
+    }
+  } catch (e) {}
+
+  // Record this page's Nth attempt at the given server build; -1 = give up.
+  function attempt(build) {
+    try {
+      var prev = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      var n = (prev && prev.b === build) ? prev.n : 0;
+      if (n >= 2) return -1;
+      sessionStorage.setItem(KEY, JSON.stringify({ b: build, n: n + 1 }));
+      return n + 1;
+    } catch (e) { return 1; }
+  }
+
+  // Last resort: a URL the cache has never seen.
+  function bust(build) {
+    var u = new URL(location.href);
+    u.searchParams.set("v", build);
+    location.replace(u.toString());
+  }
+
+  function check() {
+    fetch("version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.build || d.build === B) return;
+        var n = attempt(d.build);
+        if (n === -1) return;
+        if (n > 1) { bust(d.build); return; }
+        // cache:"reload" bypasses the cache AND overwrites the stale entry for
+        // this exact URL, so the following reload — and any later visit, and
+        // view-source — all get the new page. The ?v= trick can't do that: it
+        // caches under a different URL and leaves the real one stale forever.
+        fetch(location.href, { cache: "reload" })
+          .then(function () { location.reload(); })
+          .catch(function () { bust(d.build); });
+      })
+      .catch(function () {});
+  }
+
+  check();
+  // Back/forward restores from bfcache without re-running scripts.
+  window.addEventListener("pageshow", function (e) { if (e.persisted) check(); });
+})();
+</script>
+<!--/DE_CACHE_GUARD-->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Special Collections</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T1W89Y447W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-T1W89Y447W');
+</script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    max-width: 1000px;
+}
+
+h1 {
+    margin-bottom: 12px;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+}
+.title-row h1 {
+    margin-bottom: 0;
+}
+
+.index {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 8px 0;
+    border-bottom: 1px solid #ccc;
+    z-index: 1000;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+.index a {
+    margin-right: 10px;
+    font-size: 13px;
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.index a:hover {
+    text-decoration: underline;
+}
+
+.index-sep {
+    margin-right: 10px;
+    color: #bbb;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+/* Cross-reference stub — "Paul Taylor Dance Company — see under Taylor".
+   Rendered with the same h3 tag the real company headings use, so size and
+   weight match without restating them. The name is blue like a linked company
+   name but NOT underlined (it isn't the link); the "see under X" half is the
+   link and carries the underline. Mirrors .company-xref in
+   generate_performances_company.py — keep the two in step. */
+.company-xref .xref-name {
+    color: #0000ee;
+    text-decoration: none;
+}
+
+.company-xref .xref-sep {
+    color: #666;
+}
+
+.company-xref a {
+    color: #0000ee;
+    text-decoration: underline;
+}
+
+.company-xref a:hover {
+    color: #1a4d8f;
+}
+
+.letter-heading,
+.year-heading {
+    margin-top: 40px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+    scroll-margin-top: 60px;
+}
+
+.guest-block {
+    margin-top: 18px;
+    margin-bottom: 24px;
+    scroll-margin-top: 60px;
+}
+
+.guest-line {
+    font-size: 17px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.appearance,
+.episode-block {
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+
+.row2 {
+    color: #444;
+    line-height: 1.4;
+}
+
+.desc-button {
+    margin-left: 8px;
+    font-size: 12px;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+
+.description {
+    display: none;
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: #f5f5f5;
+    border-left: 3px solid #ccc;
+    color: #333;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow: hidden;   /* contain the floated episode thumbnail */
+}
+
+.ep-thumb-link {
+    float: left;
+    margin: 2px 12px 4px 0;
+    line-height: 0;
+}
+
+.ep-thumb {
+    display: block;
+    width: 280px;
+    height: auto;
+    border-radius: 3px;
+    background: #e8e8e8;
+}
+
+a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.profile-badge {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 7px;
+    border: 1px solid #1a73e8;
+    border-radius: 3px;
+    color: #1a73e8;
+    vertical-align: middle;
+}
+
+.profile-badge:hover {
+    background: #e8f0fe;
+    text-decoration: none;
+}
+
+.patreon-badge {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 7px;
+    border: 1px solid #f96854;
+    border-radius: 3px;
+    color: #f96854;
+    vertical-align: middle;
+}
+
+.patreon-badge:hover {
+    background: #fff0ee;
+    text-decoration: none;
+}
+
+.youtube-badge {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 7px;
+    border: 1px solid #cc0000;
+    border-radius: 3px;
+    color: #cc0000;
+    vertical-align: middle;
+}
+
+.youtube-badge:hover {
+    background: #fff0f0;
+    text-decoration: none;
+}
+
+.instagram-badge {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 7px;
+    border: 1px solid #c13584;
+    border-radius: 3px;
+    color: #c13584;
+    vertical-align: middle;
+}
+
+.instagram-badge:hover {
+    background: #fdf0f7;
+    text-decoration: none;
+}
+
+/* --- home nav dropdown --- */
+.home-nav { position: relative; display: inline-block; vertical-align: middle; }
+.home-nav-arrow {
+    background: none; border: none; padding: 0 1px 0 3px; cursor: pointer;
+    font-size: 9px; color: currentColor; opacity: 0.55; vertical-align: middle;
+    line-height: 1; font-family: inherit;
+}
+.home-nav-arrow:hover { opacity: 1; }
+.home-nav-dropdown {
+    display: none;
+    position: fixed;
+    background: white; border: 1px solid #ddd; border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    white-space: nowrap; z-index: 2000; min-width: 145px;
+}
+.home-nav-dropdown.open { display: block; }
+.home-nav-dropdown a {
+    display: block; padding: 8px 14px;
+    color: #333 !important; font-weight: normal !important;
+    text-decoration: none; font-size: 13px;
+}
+.home-nav-dropdown a:first-child { border-radius: 5px 5px 0 0; }
+.home-nav-dropdown a:last-child  { border-radius: 0 0 5px 5px; }
+.home-nav-dropdown a:hover { background: #f5f5f5; color: #1a73e8 !important; }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 650px) {
+    body {
+        margin: 14px;
+        font-size: 18px;
+    }
+    .guest-line {
+        font-size: 20px;
+    }
+    .index a {
+        font-size: 16px;
+        margin-right: 10px;
+        padding: 5px 2px;
+    }
+    .index-sep {
+        font-size: 16px;
+    }
+    .appearance,
+    .episode-block {
+        margin-left: 8px;
+    }
+    .row2 {
+        line-height: 1.6;
+    }
+    .profile-badge,
+    .patreon-badge,
+    .youtube-badge,
+    .instagram-badge {
+        font-size: 14px;
+        padding: 5px 10px;
+        margin-left: 0;
+        margin-top: 6px;
+        display: inline-block;
+    }
+    .desc-button {
+        font-size: 14px;
+        padding: 5px 10px;
+        margin-left: 0;
+        margin-top: 6px;
+    }
+    .home-nav-dropdown a {
+        font-size: 16px;
+        padding: 11px 16px;
+    }
+    .ep-thumb-link {
+        float: none;
+        margin: 0 0 8px 0;
+    }
+    .ep-thumb {
+        width: 100%;
+    }
+}
+
+.nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: #555;
+    font-weight: bold;
+    text-decoration: none;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.icon-btn:hover {
+    color: #333;
+    text-decoration: none;
+}
+/* Help "?" keeps its circle, sized to roughly match the plain gear icon's
+   visual footprint (both sit in a 28px box — see .icon-btn above). */
+.icon-btn-circle {
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-size: 15px;
+}
+.icon-btn-circle:hover {
+    background: #f0f0f0;
+    border-color: #999;
+}
+/* Gear icon — no circle/border, just the glyph in the same-size box. */
+.icon-btn-gear { }
+.close-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 16px;
+    border-radius: 16px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #555;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    line-height: 1;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.close-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+    color: #333;
+    text-decoration: none;
+}
+</style>
+<script>
+function toggleDescription(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const isOpen = el.style.display === "block";
+    el.style.display = isOpen ? "none" : "block";
+    btn.textContent = isOpen ? "Show description" : "Hide description";
+    btn.setAttribute("aria-expanded", String(!isOpen));
+}
+
+function toggleHomeNav(btn) {
+    const dd = btn.nextElementSibling;
+    const opening = !dd.classList.contains('open');
+    document.querySelectorAll('.home-nav-dropdown.open').forEach(function(el) {
+        el.classList.remove('open');
+    });
+    if (opening) {
+        const rect = btn.getBoundingClientRect();
+        dd.style.top = (rect.bottom + 4) + 'px';
+        dd.style.left = rect.left + 'px';
+        dd.classList.add('open');
+        setTimeout(function () {
+            document.addEventListener('click', function closeDD(e) {
+                if (!btn.closest('.home-nav').contains(e.target)) {
+                    dd.classList.remove('open');
+                    document.removeEventListener('click', closeDD);
+                }
+            });
+        }, 0);
+    }
+}
+</script>
+</head>
+<body>
+<div class="title-row"><h1>Special Collections</h1><span class="nav-right"><a href="settings.html" class="icon-btn icon-btn-gear" title="Settings" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></a><a href="help.html" class="icon-btn icon-btn-circle" title="Help" aria-label="Help">?</a></span></div>
+
+<div class="index">
+<span class="home-nav"><a href="podcasts.html">Podcasts</a><button class="home-nav-arrow" onclick="toggleHomeNav(this)" aria-label="Site navigation">&#9662;</button><div class="home-nav-dropdown"><a href="danceexplorer.html">Home</a><a href="performances.html">Performances</a></div></span>
+</div>
+<h2 id="sc-msb-repetiteur" class="year-heading">Michael&#x27;s Repetiteur Journey</h2>
+<p class="collection-intro" style="margin:0 0 14px;font-style:italic;">Michael Sean Breeden on staging ballets by Justin Peck, Balanchine and Ratmansky around the world.</p>
+<div class="episode-block">
+<div class="row2">Oct 28, 2026 — (516) — <a href="https://www.conversationsondancepod.com/episodes-transcripts/516-michaels-fall-2026-repetiteur-journey-for-george-balanchine-justin-peck-and-alexei-ratmansky" target="_blank" rel="noopener noreferrer">Michael&#x27;s Fall 2026 Repetiteur journey for George Balanchine, Justin Peck, and Alexei Ratmansky</a>
+ <a class="patreon-badge" href="https://www.patreon.com/cw/conversationsondance" target="_blank" rel="noopener noreferrer" title="Listen to this episode ad-free on Patreon">Patreon</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-1', this)">Show description</button>
+</div>
+<div id="desc-sc-1" class="description">Rebecca King Ferraro and Michael Sean Breeden share a catch-up episode. Michael recounts recent travel and staging work: time at IU and Chicago, then Nashville for the premiere of Balanchine’s Allegro, reflecting on the ballet’s joy, difficulty, and the dancers’ investment, alongside mention of Miami City Ballet performing Allegro and Ashley Knox’s retirement. He returns to Royal Winnipeg Ballet to stage Alexei Ratmansky’s The Fairy’s Kiss, describing its personal significance, Ratmansky’s brief visit, and Ratmansky’s formative history in Winnipeg, including meeting a key supporter from that era. Michael also praises Houston Thomas’s Firebird. Now in Hamburg staging Justin Peck’s Copland Dance Episodes, he discusses seeing John Neumeier’s Cinderella and Lady of the Camellias and the company’s strong theatrical acting, with Alice in Wonderland also in repertory.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Sep 2, 2026 — (510) — <a href="https://www.conversationsondancepod.com/episodes-transcripts/510-summer-recap-and-a-cod-restructure-with-michael-and-rebecca" target="_blank" rel="noopener noreferrer">Summer recap and a COD restructure with Michael and Rebecca</a>
+ <a class="patreon-badge" href="https://www.patreon.com/cw/conversationsondance" target="_blank" rel="noopener noreferrer" title="Listen to this episode ad-free on Patreon">Patreon</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-2', this)">Show description</button>
+</div>
+<div id="desc-sc-2" class="description">Conversations on Dance: Patreon Updates, Vail Highlights, and Michael’s First Balanchine Staging. Rebecca King Ferraro and Michael Sean Breeden discuss a format shift for Conversations on Dance, encouraging listeners to support the podcast via Patreon to help sustain production while keeping three free episodes per month and the full back catalog free. They outline tiers—Emerald ($3, ad-free episodes), Ruby ($8, ad-free plus one monthly bonus episode), and Diamond ($15, same as Ruby)—and offer a free one-month trial link in the show notes. They recap their 10th year at the Vail Dance Festival, highlighting guests including Alexei Ratmansky, Caroline Shaw, Herman Cornejo, and an episode with four pianists. Michael shares staging his first Balanchine ballet, Allegro Brillante, at Nashville Ballet, and previews upcoming work at Indiana University, Royal Winnipeg Ballet, and Hamburg Ballet. They also share details on Miami City Ballet’s Young Patron Society (ages 26–45) and its upcoming events.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Sep 10, 2025 — (464) — <a href="https://www.conversationsondancepod.com/episodes-transcripts/464-michael-amp-rebecca-catching-up-10th-anniversary-season" target="_blank" rel="noopener noreferrer">Michael &amp; Rebecca, catching up + 10th anniversary season!</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-3', this)">Show description</button>
+</div>
+<div id="desc-sc-3" class="description"><a class="ep-thumb-link" href="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1757527614305-5EQYMBJ5MG04GBMB3CFA/COD+ICYMI+%281%29.png?format=1000w" target="_blank" rel="noopener noreferrer" title="Open the full-size image"><img class="ep-thumb" loading="lazy" width="280" src="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1757527614305-5EQYMBJ5MG04GBMB3CFA/COD+ICYMI+%281%29.png?format=750w" alt="Episode image for Michael &amp; Rebecca, catching up + 10th anniversary season!"></a>?This week on Conversations on Dance, it&#x27;s just Michael and Rebecca. We catch up on what we have been up to since Vail Dance Festival in August. Michael talks about working as a rehearsal director for James Whiteside in Mexico, and staging Justin Peck&#x27;s &#x27;Heatscape&#x27; at New York City Ballet this Fall.SPONSOR:San Francisco-based choreographer Alyssa Mitchel presents the premiere of Endure, a multimedia dance production taking place at Dance Mission Theater on October 3rd, 4th and 5th. The piece features six dancers, the graphic art and animations of designer Zach Litoff and recorded interviews with six marathon runners. This new work celebrates running while paying tribute to the enduring human spirit, with the intention of empowering audience members to persevere through difficult challenges. Tickets are on sale now at dancemissiontheater.org. You can follow Alyssa Mitchel on Instagram at @alymitchel or visit alyssaevemitchel.com for more information.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Jun 20, 2024 — (401) — <a href="https://www.conversationsondancepod.com/episodes-transcripts/401-michael-amp-rebecca-on-michaels-setting-of-alexei-ratmanskys-the-fairys-kiss" target="_blank" rel="noopener noreferrer">Michael &amp; Rebecca on Michael&#x27;s setting of Alexei Ratmansky&#x27;s &#x27;The Fairy&#x27;s Kiss&#x27;</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-4', this)">Show description</button>
+</div>
+<div id="desc-sc-4" class="description"><a class="ep-thumb-link" href="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1718900683375-VZHJ0LY8GQIEK0KBGJV7/COD+pastel.png?format=1000w" target="_blank" rel="noopener noreferrer" title="Open the full-size image"><img class="ep-thumb" loading="lazy" width="280" src="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1718900683375-VZHJ0LY8GQIEK0KBGJV7/COD+pastel.png?format=750w" alt="Episode image for Michael &amp; Rebecca on Michael&#x27;s setting of Alexei Ratmansky&#x27;s &#x27;The Fairy&#x27;s Kiss&#x27;"></a>It&#x27;s just us this week and we catch up on Michael&#x27;s staging of Alexei Ratmansky&#x27;s &#x27;The Fairy&#x27;s Kiss&#x27; at Dutch National Ballet. PLUS - JUST ANNOUNCED! Tickets for Conversations on Dance at the 2024 Vail Dance Festival are on sale now! https://vaildance.org/conversations-on-dance/</div>
+</div>
+<div class="episode-block">
+<div class="row2">Mar 19, 2024 — (389) — <a href="https://www.conversationsondancepod.com/episodes-transcripts/389-michael-and-rebecca-check-in" target="_blank" rel="noopener noreferrer">Michael and Rebecca check in</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-5', this)">Show description</button>
+</div>
+<div id="desc-sc-5" class="description"><a class="ep-thumb-link" href="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1710950143352-VAPKYOW50089VHVV6IO2/COD+pastel+%281%29.png?format=1000w" target="_blank" rel="noopener noreferrer" title="Open the full-size image"><img class="ep-thumb" loading="lazy" width="280" src="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1710950143352-VAPKYOW50089VHVV6IO2/COD+pastel+%281%29.png?format=750w" alt="Episode image for Michael and Rebecca check in"></a>It&#x27;s just us this week! We check in on some of the dance we have seen recently and talk about Michael&#x27;s work as a repetiteur.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Jan 23, 2024 — (381) — <a href="https://shows.acast.com/conversations-on-dance/episodes/michael-and-rebecca-catching-up-january" target="_blank" rel="noopener noreferrer">Michael and Rebecca, catching up after Michael&#x27;s staging of &#x27;Rodeo&#x27; at Semperoper Ballett</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-6', this)">Show description</button>
+</div>
+<div id="desc-sc-6" class="description"><a class="ep-thumb-link" href="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1706104590015-HZ0RJ8DMNY1GDWY7FT1K/COD+ICYMI-2.png?format=1000w" target="_blank" rel="noopener noreferrer" title="Open the full-size image"><img class="ep-thumb" loading="lazy" width="280" src="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1706104590015-HZ0RJ8DMNY1GDWY7FT1K/COD+ICYMI-2.png?format=750w" alt="Episode image for Michael and Rebecca, catching up after Michael&#x27;s staging of &#x27;Rodeo&#x27; at Semperoper Ballett"></a>This week, Michael and Rebecca sit down to catch up. Michael tells Rebecca about his experience over the past 3 weeks in Dresden, Germany setting Justin Peck&#x27;s &#x27;Rodeo.&#x27; We also chat about miscellaneous items including Johan Inger&#x27;s Swan Lake, auditions for Golden State Ballet, and the Artistic Director opening at Lexington Ballet Company.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Sep 21, 2023 — <a href="https://shows.acast.com/conversations-on-dance/episodes/bonus-michael-on-staging-justin-pecks-year-of-the-rabbit-at-" target="_blank" rel="noopener noreferrer">BONUS: Michael on Staging Justin Peck&#x27;s &#x27;Year of the Rabbit&#x27; at Nashville Ballet</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-7', this)">Show description</button>
+</div>
+<div id="desc-sc-7" class="description"><a class="ep-thumb-link" href="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1695314306340-RYZTCOHPWQMCDQZX0MAC/Michael+Breeden+Year+of+the+Rabbit+Nashville+Ballet.jpg?format=1000w" target="_blank" rel="noopener noreferrer" title="Open the full-size image"><img class="ep-thumb" loading="lazy" width="280" src="https://images.squarespace-cdn.com/content/v1/6414a9c9eded7c61d70e65d6/1695314306340-RYZTCOHPWQMCDQZX0MAC/Michael+Breeden+Year+of+the+Rabbit+Nashville+Ballet.jpg?format=750w" alt="Episode image for BONUS: Michael on Staging Justin Peck&#x27;s &#x27;Year of the Rabbit&#x27; at Nashville Ballet"></a>Today&#x27;s episode is a special bonus episode and cross over with Nashville Ballet&#x27;s Inside the Ballet Podcast. In this episode, Michael takes the guest chair and chats with two members of the Nashville Ballet team, Briona Richardson, Senior Manager of Community Engagement and Nick Mullikin, Artistic Director. This episode gives a behind the scenes look at the work Michael did helping bring JustinPeck&#x27;s &#x27;Year Of the Rabbit&#x27; to Nashville Ballet. If you&#x27;re in the Nashville area, visit nashvilleballet.com to purchase tickets for performances Sep 22-24. Listen to Nashville Ballet&#x27;s Inside the Ballet Podcast here.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Oct 13, 2022 — (310) — <a href="https://shows.acast.com/conversations-on-dance/episodes/64147e7c7eb781001260a4e1" target="_blank" rel="noopener noreferrer">Michael &amp; Rebecca: catching up from Copenhagen</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-8', this)">Show description</button>
+</div>
+<div id="desc-sc-8" class="description">It&#x27;s just us this week on Conversations on Dance. Michael is in Denmark setting a ballet for choreographer Justin Peck at Royal Danish Ballet, so he fills us in on how it&#x27;s going, 3 weeks in. Rebecca fills us in on how everything is going with her new baby.</div>
+</div>
+<div class="episode-block">
+<div class="row2">May 28, 2019 — (139) — <a href="https://shows.acast.com/conversations-on-dance/episodes/64147e7c7eb781001260a595" target="_blank" rel="noopener noreferrer">Michael and <strong>Zoe Zien</strong>, On Staging Year of the Rabbit in Hong Kong</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-9', this)">Show description</button>
+</div>
+<div id="desc-sc-9" class="description">This week, through the magic of Skype, Rebecca talks with Michael and friend of the pod, Zoe Zien, who are in Hong Kong setting Justin Peck&#x27;s Year of the Rabbit for Hong Kong Ballet. Michael and Rebecca danced with Zoe at Miami City Ballet for the majority of her 13 years with the company. Listen to our full episode with Zoe about her career and training in episode 58. Today, Michael and Zoe talk with Rebecca about their first international experience as repetiteurs, what their process has been like, dealing with jet lag, and they break down some of their favorite experiences they have had in Hong Kong so far.</div>
+</div>
+<div class="episode-block">
+<div class="row2">Apr 8, 2019 — (133) — <a href="https://shows.acast.com/conversations-on-dance/episodes/64147e7c7eb781001260a59a" target="_blank" rel="noopener noreferrer">Rebecca &amp; Michael: Becoming a Repetiteur</a>
+ <button class="desc-button" aria-expanded="false" onclick="toggleDescription('desc-sc-10', this)">Show description</button>
+</div>
+<div id="desc-sc-10" class="description">This episode was recorded in February, when Rebecca &amp; Michael were at the Kennedy Center to cover American Ballet Theatre&#x27;s tour to Washington, D.C. We sit down to finally catch up on Michael&#x27;s experience setting a ballet for the very first time. Michael spent about a month in Phoenix with the wonderful dancers of Ballet Arizona to teach them Justin Peck&#x27;s ballet In Creases.&#x27; He shares with us how he prepared, what the first day was like, how he modeled his work ethic, and what it felt like to see the ballet on stage for the first time.</div>
+</div>
+<script>
+(function () {
+    // Best-effort: tell Chrome not to restore a stale scroll position.
+    // This works on the first visit; on subsequent visits Chrome may have
+    // already committed to restoration before scripts run — the guard below
+    // handles that case.
+    if (window.location.hash && 'scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
+    function _navH() {
+        var nav = document.querySelector('.index, .alpha-nav, .company-nav, .company-nav-letters');
+        return nav ? Math.ceil(nav.getBoundingClientRect().height) + 8 : 60;
+    }
+
+    // Same-page anchor clicks (A-Z nav, Jump To links that stay on this page).
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest('a');
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.charAt(0) !== '#' || href.length < 2) return;
+        var target = document.getElementById(href.slice(1));
+        if (!target) return;
+        e.preventDefault();
+        target.style.scrollMarginTop = _navH() + 'px';
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.pushState(null, '', href);
+    });
+
+    // Cross-page hash arrival.
+    if (window.location.hash) {
+        var _h = window.location.hash;
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                var target = document.getElementById(_h.slice(1));
+                if (!target) return;
+                var nav = document.querySelector('.index, .alpha-nav, .company-nav, .company-nav-letters');
+                var rawNavH = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
+                target.style.scrollMarginTop = (rawNavH + 8) + 'px';
+                target.scrollIntoView({ behavior: 'instant', block: 'start' });
+
+                // Scroll guard: if Chrome's restoration fires after our
+                // correction (moving us to the wrong position), snap back.
+                // We distinguish restoration (no prior user gesture) from
+                // deliberate scrolling (mousedown / wheel / touch / key fires
+                // before the resulting scroll event).
+                var anchorY = window.scrollY;
+                var guardOn = true;
+                var userScrolled = false;
+                ['mousedown', 'touchstart', 'keydown', 'wheel'].forEach(function (t) {
+                    window.addEventListener(t, function () { userScrolled = true; }, { passive: true });
+                });
+                setTimeout(function () { guardOn = false; }, 1500);
+                var _g = function () {
+                    if (!guardOn) { window.removeEventListener('scroll', _g); return; }
+                    if (userScrolled) {
+                        guardOn = false;
+                        window.removeEventListener('scroll', _g);
+                        return;
+                    }
+                    if (Math.abs(window.scrollY - anchorY) > 20) {
+                        window.scrollTo(0, anchorY);
+                    }
+                };
+                window.addEventListener('scroll', _g);
+            });
+        });
+    }
+})();
+</script>
+</body>
+</html>
