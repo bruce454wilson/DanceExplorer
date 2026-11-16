@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--DE_CACHE_GUARD-->
+<meta name="de-build" content="20261116-161506">
+<script>
+(function () {
+  var B = "20261116-161506";
+  // Per-PAGE key. A single site-wide key would let the first stale page of a
+  // session consume the one allowed retry, leaving every other page stale.
+  var KEY = "de_cache_reload:" + location.pathname;
+
+  // Tidy the address bar: drop the ?v= we may have arrived with.
+  try {
+    var here = new URL(location.href);
+    if (here.searchParams.get("v")) {
+      here.searchParams.delete("v");
+      history.replaceState(null, "", here.pathname + here.search + here.hash);
+    }
+  } catch (e) {}
+
+  // Record this page's Nth attempt at the given server build; -1 = give up.
+  function attempt(build) {
+    try {
+      var prev = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      var n = (prev && prev.b === build) ? prev.n : 0;
+      if (n >= 2) return -1;
+      sessionStorage.setItem(KEY, JSON.stringify({ b: build, n: n + 1 }));
+      return n + 1;
+    } catch (e) { return 1; }
+  }
+
+  // Last resort: a URL the cache has never seen.
+  function bust(build) {
+    var u = new URL(location.href);
+    u.searchParams.set("v", build);
+    location.replace(u.toString());
+  }
+
+  function check() {
+    fetch("version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.build || d.build === B) return;
+        var n = attempt(d.build);
+        if (n === -1) return;
+        if (n > 1) { bust(d.build); return; }
+        // cache:"reload" bypasses the cache AND overwrites the stale entry for
+        // this exact URL, so the following reload — and any later visit, and
+        // view-source — all get the new page. The ?v= trick can't do that: it
+        // caches under a different URL and leaves the real one stale forever.
+        fetch(location.href, { cache: "reload" })
+          .then(function () { location.reload(); })
+          .catch(function () { bust(d.build); });
+      })
+      .catch(function () {});
+  }
+
+  check();
+  // Back/forward restores from bfcache without re-running scripts.
+  window.addEventListener("pageshow", function (e) { if (e.persisted) check(); });
+})();
+</script>
+<!--/DE_CACHE_GUARD-->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Our Posts — Dance Explorer</title>
+<meta name="description" content="Links from Dance Explorer's Instagram and Facebook posts.">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T1W89Y447W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-T1W89Y447W');
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #1c0c32;
+    color: #fff;
+    min-height: 100vh;
+}
+.band {
+    text-align: center;
+    padding: 28px 16px 14px;
+    line-height: 1;
+}
+.band a { text-decoration: none; }
+.brand {
+    display: block;
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-size: clamp(30px, 8vw, 56px);
+    font-weight: 700;
+    color: #d4af37;
+    letter-spacing: 0.05em;
+}
+.sub {
+    display: block;
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-size: clamp(12px, 2.6vw, 18px);
+    font-weight: 700;
+    color: #d4af37;
+    letter-spacing: 0.35em;
+    opacity: 0.88;
+    margin-top: 8px;
+}
+.nav-row {
+    border-bottom: 3px solid #d4af37;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+.icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(212,175,55,0.45);
+    background: rgba(212,175,55,0.06);
+    color: rgba(212,175,55,0.85);
+}
+.icon-link:hover { background: rgba(212,175,55,0.18); color: #d4af37; }
+.content {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 18px 64px;
+}
+.post {
+    border-bottom: 1px solid rgba(212,175,55,0.22);
+    scroll-margin-top: 12px;
+}
+.post-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.post-titles { flex: 1; min-width: 0; }
+.post-date {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(212,175,55,0.7);
+}
+.post-title {
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1.3;
+    margin-top: 4px;
+}
+.toggle {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(212,175,55,0.55);
+    background: rgba(212,175,55,0.06);
+    position: relative;
+}
+.toggle::before, .toggle::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 2px;
+    margin: -1px 0 0 -7px;
+    background: #d4af37;
+}
+.toggle::after { transform: rotate(90deg); transition: transform 0.15s; }
+.post.open .toggle::after { transform: rotate(0deg); }
+.post-head:hover .toggle { background: rgba(212,175,55,0.18); }
+.post-body { display: none; padding: 0 0 20px; }
+.post.open .post-body { display: block; }
+.post-intro {
+    margin: 0 0 14px;
+    color: #d8d0ea;
+    line-height: 1.5;
+    font-size: 15px;
+}
+.links { display: grid; gap: 10px; }
+.link-btn {
+    display: block;
+    text-decoration: none;
+    padding: 13px 15px;
+    border: 1.5px solid rgba(212,175,55,0.32);
+    border-radius: 6px;
+    background: rgba(212,175,55,0.06);
+}
+.link-btn:hover { background: rgba(212,175,55,0.16); border-color: rgba(212,175,55,0.78); }
+.link-label { font-size: 16px; font-weight: bold; color: #fff; line-height: 1.3; }
+.ext { color: rgba(212,175,55,0.8); margin-left: 6px; font-weight: normal; }
+.link-note { font-size: 13px; color: #a8c8f0; margin-top: 5px; line-height: 1.45; }
+.home-btn {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border: 1.5px solid #d4af37;
+    border-radius: 6px;
+    background: rgba(212,175,55,0.14);
+}
+.home-btn:hover { background: rgba(212,175,55,0.26); }
+.home-btn-label { font-size: 17px; font-weight: bold; color: #d4af37; letter-spacing: 0.02em; }
+.home-btn-note { font-size: 13px; color: #d8d0ea; margin-top: 5px; line-height: 1.45; }
+.foot {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 13px;
+}
+.foot a { color: #d4af37; text-decoration: none; }
+.foot a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="band"><a href="danceexplorer.html"><span class="brand">DANCE EXPLORER</span></a><span class="sub">FROM OUR POSTS</span></div>
+<div class="nav-row"><a href="danceexplorer.html" class="icon-link" title="Dance Explorer home" aria-label="Dance Explorer home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></a></div>
+<main class="content">
+<a class="home-btn" href="danceexplorer.html"><div class="home-btn-label">All of Dance Explorer &rarr;</div><div class="home-btn-note">Dance performances across the country and every Conversations on Dance episode</div></a>
+
+<section class="post open" id="arthur-mitchell">
+  <button class="post-head" aria-expanded="true" aria-controls="body-arthur-mitchell" onclick="togglePost(this)">
+    <span class="post-titles">
+      <span class="post-date">November 16, 2026</span>
+      <span class="post-title">Arthur Mitchell, Harlem&#x27;s Ballet Visionary</span>
+    </span>
+    <span class="toggle" aria-hidden="true"></span>
+  </button>
+  <div class="post-body" id="body-arthur-mitchell">
+    <p class="post-intro">Lynn Garafola&#x27;s new biography of Arthur Mitchell, founder of Dance Theatre of Harlem, and where to go from there.</p>
+    <div class="links">
+<a class="link-btn" href="https://link.amazon/B09PYvBhN" target="_blank" rel="noopener noreferrer"><div class="link-label">Get the book<span class="ext" aria-hidden="true">&#8599;</span></div><div class="link-note">Arthur Mitchell: The Extraordinary Life of Harlem&#x27;s Ballet Visionary (Yale University Press)</div></a>
+<a class="link-btn" href="https://www.conversationsondancepod.com/episodes-transcripts/lynn-garafola-on-arthur-mitchell-and-the-making-of-dance-theatre-of-harlem" target="_blank" rel="noopener noreferrer"><div class="link-label">Lynn Garafola on Arthur Mitchell<span class="ext" aria-hidden="true">&#8599;</span></div><div class="link-note">Conversations on Dance, episode 518</div></a>
+<a class="link-btn" href="https://shows.acast.com/conversations-on-dance/episodes/64147e7c7eb781001260a508" target="_blank" rel="noopener noreferrer"><div class="link-label">Lynn Garafola on Bronislava Nijinska<span class="ext" aria-hidden="true">&#8599;</span></div><div class="link-note">Her biography of the choreographer and sister of Vaslav Nijinsky. Conversations on Dance, episode 271</div></a>
+<a class="link-btn" href="company_list.html#company-dance-theatre-of-harlem"><div class="link-label">Dance Theatre of Harlem on Conversations on Dance</div><div class="link-note">Every episode with DTH artists</div></a>
+<a class="link-btn" href="performances_company.html#DTOH"><div class="link-label">Dance Theatre of Harlem performances</div><div class="link-note">The 2026–27 season across the country</div></a>
+    </div>
+  </div>
+</section>
+
+<section class="post" id="welcome">
+  <button class="post-head" aria-expanded="false" aria-controls="body-welcome" onclick="togglePost(this)">
+    <span class="post-titles">
+      <span class="post-date">October 29, 2026</span>
+      <span class="post-title">Welcome to Dance Explorer</span>
+    </span>
+    <span class="toggle" aria-hidden="true"></span>
+  </button>
+  <div class="post-body" id="body-welcome">
+    <p class="post-intro">Our introduction: dance performances across the U.S. and every episode of the Conversations on Dance podcast.</p>
+    <div class="links">
+<a class="link-btn" href="performances.html"><div class="link-label">Find a performance</div><div class="link-note">Upcoming dates for major companies, by company, calendar or choreographer</div></a>
+<a class="link-btn" href="podcasts.html"><div class="link-label">Find a podcast</div><div class="link-note">Every Conversations on Dance episode, by guest, company or theme</div></a>
+<a class="link-btn" href="https://www.conversationsondancepod.com" target="_blank" rel="noopener noreferrer"><div class="link-label">Conversations on Dance<span class="ext" aria-hidden="true">&#8599;</span></div><div class="link-note">The podcast&#x27;s own site</div></a>
+    </div>
+  </div>
+</section>
+<p class="foot"><a href="danceexplorer.html">Explore all of Dance Explorer &rarr;</a></p>
+</main>
+<script>
+function togglePost(btn) {
+    var post = btn.closest('.post');
+    var open = post.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+}
+// links.html#<post id> opens that post and scrolls to it.
+(function () {
+    if (!location.hash) return;
+    var post = document.getElementById(location.hash.slice(1));
+    if (!post || !post.classList.contains('post')) return;
+    post.classList.add('open');
+    post.querySelector('.post-head').setAttribute('aria-expanded', 'true');
+    post.scrollIntoView({ block: 'start' });
+})();
+</script>
+</body>
+</html>
